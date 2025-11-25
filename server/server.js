@@ -23,7 +23,7 @@ app.use(clerkMiddleware())
 
 // API to listen to clerk webhooks
 // FIX: Using the standard Express routing method: app.use()
-app.use("/api/clerk", clerkWebhooks)
+app.post("/api/clerk", clerkWebhooks)
 
 // Basic Test Route
 app.get('/', (req, res) => res.send("API is working"))
