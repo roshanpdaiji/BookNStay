@@ -1,40 +1,32 @@
 import express from 'express'
 import 'dotenv/config'
 import cors from 'cors'
-import connectDB from './config/db.js'
+import connectDB from './config/db.js' // Ensure this path is correct
 import { clerkMiddleware } from '@clerk/express'
-import clerkWebhooks from './controllers/clerkWebhooks.js'
+import clerkWebhooks from './controllers/clerkWebhooks.js' // Ensure this path is correct
 
-//Create express app and HTTP Server
+// Initialize the database connection.
+// This runs once when the serverless function cold-starts.
+connectDB() 
+
 const app = express()
-const server = http.createServer(app)
-
-
-
 app.use(cors())
 
-//middleware
+// General Middleware
+// NOTE: For webhooks, sometimes the raw body is needed for signature verification.
+// Ensure your 'clerkWebhooks' router/middleware is set up to handle the raw body 
+// if necessary (Clerk's middleware often handles this requirement automatically).
 app.use(express.json())
 app.use(clerkMiddleware())
 
-//API to listen to clerk webhooks
-app._router.use("api/clerk",clerkWebhooks)
+// API to listen to clerk webhooks
+// FIX: Using the standard Express routing method: app.use()
+app.use("/api/clerk", clerkWebhooks)
 
+// Basic Test Route
+app.get('/', (req, res) => res.send("API is working"))
 
-app.get('/',(req,res)=>res.send("API is working"))
-
-//Connect to mongdb
-await connectDB()
-
-if(process.env.NODE_ENV !== "production"){
-const PORT = process.env.PORT || 3000;
-server.listen(PORT,()=>console.log("Server is running on PORT :" +PORT ))
-
-}
-
-//Export server fro vercel
-
-export default server
-
-
-
+// --- Serverless Export (CRITICAL FIX) ---
+// We REMOVE the entire app.listen() block.
+// Instead, we export the Express application instance so Vercel can handle the HTTP listening.
+export default app
