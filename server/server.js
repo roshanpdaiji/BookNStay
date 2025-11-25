@@ -1,37 +1,38 @@
+// --- Start of app.js ---
 import express from 'express'
 import 'dotenv/config'
 import cors from 'cors'
-import connectDB from './config/db.js' // Ensure this path is correct
+import connectDB from './config/db.js'
 import { clerkMiddleware } from '@clerk/express'
-import clerkWebhooks from './controllers/clerkWebhooks.js' // Ensure this path is correct
+import clerkWebhooks from './controllers/clerkWebhooks.js'
 
 // Initialize the database connection.
-// This runs once when the serverless function cold-starts.
-await connectDB() 
+await connectDB()
 
 const app = express()
 app.use(cors())
 
-// General Middleware
-// NOTE: For webhooks, sometimes the raw body is needed for signature verification.
-// Ensure your 'clerkWebhooks' router/middleware is set up to handle the raw body 
-// if necessary (Clerk's middleware often handles this requirement automatically).
-app.use(express.json())
-app.use(clerkMiddleware())
+// General Middleware Setup
+// NOTE: We need a special setup for webhooks to get the raw body.
 
-// API to listen to clerk webhooks
-// FIX: Using the standard Express routing method: app.use()
-app.use("/api/clerk", clerkWebhooks)
+// 1. Webhook Route Setup (Must be FIRST to get the raw body)
+// We use a body parser that stores the raw body, and NO clerkMiddleware or express.json().
+app.post(
+  "/api/clerk",
+  express.raw({ type: 'application/json' }), // Middleware to get the raw body buffer
+  clerkWebhooks
+);
+
+// 2. Standard Middleware (Applied to ALL other routes)
+// Apply the JSON parser and Clerk middleware only AFTER the raw webhook route.
+app.use(express.json());
+app.use(clerkMiddleware());
 
 // Basic Test Route
 app.get('/', (req, res) => res.send("API is working"))
 
-const PORT = process.env.PORT || 3000;
+// ... (Remove app.listen block for Vercel) ...
 
-app.listen(PORT,()=>console.log(`Server running on port ${PORT}`))
-
-// --- Serverless Export (CRITICAL FIX) ---
-// We REMOVE the entire app.listen() block.
-// Instead, we export the Express application instance so Vercel can handle the HTTP listening.
+// --- Serverless Export ---
 export default app
-
+// --- End of app.js ---
