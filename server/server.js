@@ -7,7 +7,7 @@ import clerkWebhooks from './controllers/clerkWebhooks.js' // Ensure this path i
 
 // Initialize the database connection.
 // This runs once when the serverless function cold-starts.
-connectDB() 
+await connectDB() 
 
 const app = express()
 app.use(cors())
