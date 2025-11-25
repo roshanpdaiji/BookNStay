@@ -26,6 +26,10 @@ app.use("/api/clerk", clerkWebhooks)
 // Basic Test Route
 app.get('/', (req, res) => res.send("API is working"))
 
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT,()=>console.log(`Server running on port ${PORT}`))
+
 // --- Serverless Export (CRITICAL FIX) ---
 // We REMOVE the entire app.listen() block.
 // Instead, we export the Express application instance so Vercel can handle the HTTP listening.
