@@ -1,23 +1,13 @@
-// config/db.js
-import mongoose from "mongoose";
+import mongoose from 'mongoose'
 
-let isConnected = false; // cached connection
+const connectDB=async()=>{
+    try {
+        mongoose.connection.on('connected',()=>console.log('Database Connected'))
+        await mongoose.connect(`${process.env.MONGODB_URI}/booknstay`)
+    } catch (error) {
+        console.log(error.message)
+    }
+}
 
-const connectDB = async () => {
-  if (isConnected) {
-    console.log("🔵 MongoDB already connected");
-    return;
-  }
+export default connectDB
 
-  try {
-    await mongoose.connect(process.env.MONGODB_URI, {
-      dbName: "booknstay", // ensure DB name here
-    });
-    isConnected = true;
-    console.log("🟢 MongoDB Connected");
-  } catch (err) {
-    console.log("🔴 MongoDB connection error:", err);
-  }
-};
-
-export default connectDB;
