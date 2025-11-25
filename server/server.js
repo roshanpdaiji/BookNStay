@@ -5,6 +5,10 @@ import connectDB from './config/db.js' // Ensure this path is correct
 import { clerkMiddleware } from '@clerk/express'
 import clerkWebhooks from './controllers/clerkWebhooks.js' // Ensure this path is correct
 
+
+// This runs once when the serverless function cold-starts.
+await connectDB() 
+
 // Initialize the database connection.
 
 const app = express()
@@ -24,8 +28,7 @@ app.use("/api/clerk", clerkWebhooks)
 // Basic Test Route
 app.get('/', (req, res) => res.send("API is working"))
 
-// This runs once when the serverless function cold-starts.
-await connectDB() 
+
 
 if(process.env.NODE_ENV !=="production"){
 const PORT = process.env.PORT || 3000;
