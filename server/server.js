@@ -1,32 +1,37 @@
-import express from 'express';
-import 'dotenv/config';
-import cors from 'cors';
-import connectDB from './config/db.js';
-import { clerkMiddleware } from '@clerk/express';
-import clerkWebhooks from './controllers/clerkWebhooks.js';
+import express from 'express'
+import 'dotenv/config'
+import cors from 'cors'
+import connectDB from './config/db.js' // Ensure this path is correct
+import { clerkMiddleware } from '@clerk/express'
+import clerkWebhooks from './controllers/clerkWebhooks.js' // Ensure this path is correct
 
-connectDB();
+// Initialize the database connection.
+// This runs once when the serverless function cold-starts.
+connectDB() 
 
-const app = express();
-app.use(cors());
-app.use(clerkMiddleware());
+const app = express()
+app.use(cors())
 
-// 🛑 REMOVE express.json() BEFORE THE WEBHOOK ROUTE
+// General Middleware
+// NOTE: For webhooks, sometimes the raw body is needed for signature verification.
+// Ensure your 'clerkWebhooks' router/middleware is set up to handle the raw body 
+// if necessary (Clerk's middleware often handles this requirement automatically).
+app.use(express.json())
+app.use(clerkMiddleware())
 
-// ✔ RAW BODY ONLY FOR CLERK WEBHOOK
-app.post(
-  "/api/clerk",
-  express.raw({ type: "application/json" }),
-  clerkWebhooks
-);
+// API to listen to clerk webhooks
+// FIX: Using the standard Express routing method: app.use()
+app.use("/api/clerk", clerkWebhooks)
 
-// ✔ After webhook -> NOW use express.json()
-app.use(express.json());
-
-// Test Route
-app.get('/', (req, res) => res.send("API is working"));
+// Basic Test Route
+app.get('/', (req, res) => res.send("API is working"))
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
-export default app;
+app.listen(PORT,()=>console.log(`Server running on port ${PORT}`))
+
+// --- Serverless Export (CRITICAL FIX) ---
+// We REMOVE the entire app.listen() block.
+// Instead, we export the Express application instance so Vercel can handle the HTTP listening.
+export default app
+
