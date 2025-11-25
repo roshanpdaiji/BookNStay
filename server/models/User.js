@@ -6,11 +6,10 @@ const userSchema = new mongoose.Schema({
     email: { type: String, required: true },
     image: { type: String },
     role: { type: String, enum: ['user', 'hotelOwner'], default: 'user' },
-    recentSearchedCities: { type: String, required: true },
-  },
-  { timestamps: true }
-);
+    recentSearchedCities: { type: String, default: "" }, // Added default
+}, { timestamps: true });
 
-const User = mongoose.model('User', userSchema);
+// Check if model exists before compiling to prevent OverwriteModelError
+const User = mongoose.models.User || mongoose.model('User', userSchema);
 
 export default User;

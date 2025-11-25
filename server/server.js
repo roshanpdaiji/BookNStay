@@ -1,44 +1,31 @@
 import express from 'express'
 import 'dotenv/config'
 import cors from 'cors'
-import connectDB from './config/db.js' // Ensure this path is correct
+import connectDB from './config/db.js'
 import { clerkMiddleware } from '@clerk/express'
-import clerkWebhooks from './controllers/clerkWebhooks.js' // Ensure this path is correct
+import clerkWebhooks from './controllers/clerkWebhooks.js'
+import bodyParser from 'body-parser' // Import this
 
-
-// This runs once when the serverless function cold-starts.
-await connectDB() 
-
-// Initialize the database connection.
+// Initialize DB
+await connectDB()
 
 const app = express()
 app.use(cors())
 
-// General Middleware
-// NOTE: For webhooks, sometimes the raw body is needed for signature verification.
-// Ensure your 'clerkWebhooks' router/middleware is set up to handle the raw body 
-// if necessary (Clerk's middleware often handles this requirement automatically).
-app.use(express.json())
+// --- FIX START ---
+// 1. Apply Clerk Middleware
 app.use(clerkMiddleware())
 
-// API to listen to clerk webhooks
-// FIX: Using the standard Express routing method: app.use()
-app.post("/api/clerk", clerkWebhooks)
+// 2. specific route for Webhook using RAW body parser
+// We force the body to be a Buffer so svix can verify the signature accurately
+app.post("/api/clerk", bodyParser.raw({ type: 'application/json' }), clerkWebhooks)
 
-// Basic Test Route
+// 3. Global JSON parser for all other routes
+app.use(express.json())
+// --- FIX END ---
+
+
 app.get('/', (req, res) => res.send("API is working"))
 
-
-
-if(process.env.NODE_ENV !=="production"){
-const PORT = process.env.PORT || 3000;
-
-app.listen(PORT,()=>console.log(`Server running on port ${PORT}`))
-}
-
-
-// --- Serverless Export (CRITICAL FIX) ---
-// We REMOVE the entire app.listen() block.
-// Instead, we export the Express application instance so Vercel can handle the HTTP listening.
+// Export for Vercel
 export default app
-
